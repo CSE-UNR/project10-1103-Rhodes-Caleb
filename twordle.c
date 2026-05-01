@@ -13,9 +13,10 @@ int readFile(char solutionStr[]);
 void makeLowercase(char str[]);
 void promptUser(int tries, char userGuess[]);
 int guessLen(char userGuess[]);
-bool checkValid(char userGuess[]);
-void checkGuess(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1]);
-void giveHints(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1]);
+bool checkValidLen(char userGuess[]);
+bool checkValidIn(char userGuess[]);
+void checkGuess(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1], int used[]);
+void giveHints(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1], int used[]);
 void dispGuesses(bool win, int tries, char guessesAndHints[][LETTER_CAP + 1]);
 bool checkWin(int tries, char guessesAndHints[][LETTER_CAP + 1]);
 
@@ -23,14 +24,15 @@ int main(){
 	bool win = false;
 	int tries = 0;
 	char solutionStr[LETTER_CAP + 1], userGuess[LETTER_CAP + 2], guessesAndHints[MAX_GUESSES * 2][LETTER_CAP + 1];
+	int used[LETTER_CAP] = {0, 0, 0, 0, 0};
 	
 	readFile(solutionStr);
 	
 	do{
 	
 	promptUser(tries, userGuess);
-	checkGuess(tries, solutionStr, userGuess, guessesAndHints);
-	giveHints(tries, solutionStr, userGuess, guessesAndHints);
+	checkGuess(tries, solutionStr, userGuess, guessesAndHints, used);
+	giveHints(tries, solutionStr, userGuess, guessesAndHints, used);
 	win = checkWin(tries, guessesAndHints);
 	dispGuesses(win, tries, guessesAndHints);
 	tries++;
@@ -81,7 +83,8 @@ void makeLowercase(char str[]){
 
 
 void promptUser(int tries, char userGuess[]){
-	bool validGuess = false;	
+	bool validLen = false;	
+	bool validIn = false;
 	
 	if(tries < LETTER_CAP){
 		printf("Guess %d! Enter your guess: ", tries + 1);
@@ -91,13 +94,21 @@ void promptUser(int tries, char userGuess[]){
 		printf("\nFINAL GUESS: ");
 		scanf("%s", userGuess);
 	}
-	validGuess = checkValid(userGuess);
+
+	validLen = checkValidLen(userGuess);
+	validIn = checkValidIn(userGuess);
 	
-	while(!validGuess){
+	while(!validLen){
 		printf("Your guess must be 5 letters long.\n");
 		printf("Please try again: ");
 		scanf("%s", userGuess);
-		validGuess = checkValid(userGuess);
+		validLen = checkValidLen(userGuess);
+	}
+	while(!validIn){
+	printf("Your guess must contain only letters.\n");
+		printf("Please try again: ");
+		scanf("%s", userGuess);
+		validIn = checkValidIn(userGuess);
 	}
 	makeLowercase(userGuess);
 }
@@ -106,27 +117,39 @@ int guessLen(char userGuess[]){
 	int length = 0;
 	
 	for(int i = 0; userGuess[i] != '\0'; i++){
-		if ((userGuess[i] >= 'a' && userGuess[i] <= 'z') || (userGuess[i] >= 'A' && userGuess[i] <= 'Z')){
-			length++;
-	}
+		length++;
 	}
 	return length;
 }
 
-bool checkValid(char userGuess[]){
+bool checkValidLen(char userGuess[]){
+	bool validLen = true;
 	int length = guessLen(userGuess);
 	
 	if(length != LETTER_CAP){
-		return false;
+		validLen = false;
 	}
-	return true;
+	return validLen;
 }
-void checkGuess(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1]){
+
+bool checkValidIn(char userGuess[]){
+	bool validIn = true;
+	
+	for(int i = 0; userGuess[i] != '\0'; i++){
+		if(!((userGuess[i] >= 'a' && userGuess[i] <= 'z') || (userGuess[i] >= 'A' && userGuess[i] <= 'Z'))){
+			validIn = false;
+		}
+	}
+	return validIn;
+}
+
+void checkGuess(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1], int used[]){
 	int correctRow = tries * 2;
 	
 	for(int i = 0; i < LETTER_CAP; i++){
 		if(solutionStr[i] == userGuess[i]){
 			guessesAndHints[correctRow][i] = userGuess[i] - 32;
+			used[i] = 1;
 		}
 		else{
 			guessesAndHints[correctRow][i] = userGuess[i];
@@ -135,7 +158,7 @@ void checkGuess(int tries, char solutionStr[], char userGuess[], char guessesAnd
 	guessesAndHints[correctRow][LETTER_CAP] = '\0';	
 }
 
-void giveHints(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1]){
+void giveHints(int tries, char solutionStr[], char userGuess[], char guessesAndHints[][LETTER_CAP + 1], int used[]){
 	int correctRow = tries * 2;
 	int hintRow = (tries * 2) + 1;
 	
@@ -145,8 +168,10 @@ void giveHints(int tries, char solutionStr[], char userGuess[], char guessesAndH
 	
 	for(int i = 0; guessesAndHints[correctRow][i] != '\0'; i++){
 		for(int j = 0; solutionStr[j] != '\0'; j++){
-			if(guessesAndHints[correctRow][i] >= 'a' && guessesAndHints[correctRow][i] <= 'z' && guessesAndHints[correctRow][i] == solutionStr[j]){
+			if(guessesAndHints[correctRow][i] >= 'a' && guessesAndHints[correctRow][i] <= 'z' && guessesAndHints[correctRow][i] == solutionStr[j] && !used[j]){
 				guessesAndHints[hintRow][i] = '^';
+				used[j] = 1;
+				break;
 			}
 		}
 	}
