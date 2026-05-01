@@ -33,7 +33,6 @@ int main(){
 	giveHints(tries, solutionStr, userGuess, guessesAndHints);
 	win = checkWin(tries, guessesAndHints);
 	dispGuesses(win, tries, guessesAndHints);
-	//win = checkWin(tries, guessesAndHints);
 	tries++;
 	
 	} while(tries < MAX_GUESSES && win != true);
